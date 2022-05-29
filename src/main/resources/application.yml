@@ -1,0 +1,80 @@
+logging:
+  level:
+    net:
+      onur: INFO
+    org:
+      hibernate: info
+      springframework: WARN
+    root: INFO
+    springfox: WARN
+    org.springframework.web.filter.CommonsRequestLoggingFilter: DEBUG
+server:
+  port: 8080
+spring:
+  data:
+    rest:
+      detection-strategy: explicit_method_annotated
+  application:
+    name: Log Server
+  profiles:
+    active: dev
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      INDENT_OUTPUT: true
+    default-property-inclusion: NON_NULL
+    mapper:
+      DEFAULT_VIEW_INCLUSION: true
+  jpa:
+    show-sql: false
+    hibernate:
+      connection:
+        characterEncoding: utf-8
+        CharSet: utf-8
+        useUnicode: true
+  http:
+    encoding:
+    charset: UTF-8
+    enabled: true
+    force: true
+
+---
+
+spring:
+  application:
+    name: Radio Log
+  datasource:
+    driverClassName: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/second_chance
+    username: postgres
+    password: ''
+    continue-on-error: true
+    initialization-mode: always
+    sqlScriptEncoding: UTF-8
+    hikari:
+      minimumIdle: 3
+      maximumPoolSize: 20
+      idleTimeout: 120000
+      connectionTimeout: 300000
+      leakDetectionThreshold: 300000
+
+  jpa:
+    show-sql: false
+    generate-ddl: true
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      temp:
+        use_jdbc_metadata_defaults: false
+      hbm2ddl:
+        auto: update
+      ddl-auto: update
+  logging:
+    level: INFO
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+
+vaadin:
+  whitelisted-packages: com.vaadin,org.vaadin,dev.hilla,kelceoglu.beyazit.radio
+  launch-browser: true
