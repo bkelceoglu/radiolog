@@ -1,41 +1,38 @@
 package kelceoglu.beyazit.radio.views.log;
 
 import com.vaadin.flow.component.Component;
-import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.Uses;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
-import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.icon.Icon;
-import com.vaadin.flow.component.orderedlayout.FlexComponent;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.EmailField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MultiFileMemoryBuffer;
+import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.Binder;
 import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.data.validator.StringLengthValidator;
-import com.vaadin.flow.internal.MessageDigestUtil;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.theme.Theme;
+import kelceoglu.beyazit.radio.data.entity.Adam;
+import kelceoglu.beyazit.radio.data.entity.IProcessLogs;
 import kelceoglu.beyazit.radio.data.entity.LogForm;
-import lombok.extern.flogger.Flogger;
-import lombok.extern.log4j.Log4j;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
-import org.apache.juli.logging.Log;
+import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
+import javax.validation.constraints.NotNull;
+import java.io.*;
+import java.time.LocalDate;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
-import java.util.logging.Level;
 
 @PageTitle("Log")
 @Route(value = "")
@@ -44,36 +41,75 @@ import java.util.logging.Level;
 public class LogView extends Div {
     Button cancel = new Button("CLEAR");
     Button save = new Button ("UPLOAD");
-    private TextField name = new TextField ("NAME");
-    private TextField surname = new TextField ("SURNAME");
-    private TextField callSign = new TextField ("CALLSIGN");
-    private EmailField email = new EmailField ("EMAIL");
-    private Upload logFile;
-    private MultiFileMemoryBuffer multiFileMemoryBuffer;
-    private Binder<LogForm> binder = new Binder<>(LogForm.class);
+    private final TextField name = new TextField ("NAME");
+    private final TextField surname = new TextField ("SURNAME");
+    private final TextField callSign = new TextField ("CALLSIGN");
+    private final EmailField email = new EmailField ("EMAIL");
+    private final TextField fileName = new TextField ("FILE NAME");
+    private final Upload logFile;
+    private InputStream stream;
+    private final int MAX_FILE_SIZE = 50*1024;
+    private final MemoryBuffer memoryBuffer;
+    private final Binder<LogForm> binder = new Binder<>(LogForm.class);
     private Div content;
     private List<String> lines;
 
+    private Adam adam;
+
+    @Autowired private IProcessLogs processLogs;
+
     public LogView() {
-        this.multiFileMemoryBuffer = new MultiFileMemoryBuffer ();
-        this.logFile = new Upload (multiFileMemoryBuffer);
+        this.memoryBuffer = new MemoryBuffer ();
+        this.logFile = new Upload (memoryBuffer);
         this.logFile.setDropAllowed (true);
         this.logFile.setAcceptedFileTypes (".edi");
-
-        addClassName("radio_log");
-
-        add(createTitle());
+        this.logFile.setMaxFileSize (this.MAX_FILE_SIZE);
+        this.fileName.setReadOnly (true);
+        this.getFileUploader ();
+        this.save.setEnabled (false);
+        // addClassName("radio_log");
+        add(new H3("RADIO LOG CONTEST " + Calendar.getInstance ().get (Calendar.YEAR)));
         add(createFormLayout());
         add(createButtonLayout());
 
         binder.bindInstanceFields(this);
         this.bindFields ();
         clearForm();
-
+        this.binder.addStatusChangeListener (e -> this.save.setEnabled (this.binder.isValid ()));
         cancel.addClickListener(e -> clearForm());
         save.addClickListener(e -> {
-           clearForm();
+            this.processForm();
+            clearForm();
         });
+    }
+
+    private void processForm() {
+        // create adam here...
+        System.out.println (this.name.getValue ());
+        System.out.println (this.surname.getValue ());
+        System.out.println (this.email.getValue ());
+        System.out.println (this.callSign.getValue ());
+        try {
+            this.lines = IOUtils.readLines (this.stream, "UTF-8");
+        } catch (IOException e) {
+            e.printStackTrace ();
+        }
+        System.out.println ("lines: " + this.lines);
+        File f = new File ("/srv/", String.valueOf (this.callSign.getValue ()));
+        FileWriter fileWriter = null;
+        try {
+            fileWriter = new FileWriter (f, true);
+            IOUtils.writeLines (this.lines, "\n", fileWriter);
+            IOUtils.close (fileWriter);
+        } catch (IOException e) {
+            e.printStackTrace ();
+        }
+
+        this.saveAdamsLogs (adam);
+    }
+
+    private void saveAdamsLogs(Adam a) {
+        this.processLogs.saveAdamLogs (a);
     }
 
     private void bindFields(){
@@ -89,59 +125,34 @@ public class LogView extends Div {
         this.binder.forField (this.callSign)
                 .withValidator (new StringLengthValidator ("between 3 - 8", 3, 8))
                 .bind(LogForm::getCallSign, LogForm::setCallSign);
+        this.binder.forField (this.fileName)
+                .withValidator (new StringLengthValidator ("empty", 1,12))
+                .bind (LogForm::getFileName, LogForm::setFileName);
 
     }
 
     private void clearForm() {
         binder.setBean(new LogForm ());
-    }
-
-    private Component createTitle() {
-        return new H3("RADIO LOG CONTEST UPLOAD");
-
+        this.logFile.clearFileList ();
     }
 
     private Component createFormLayout() {
         // VerticalLayout vertical = new VerticalLayout();
         // vertical.setMaxWidth (200, Unit.PIXELS);
         FormLayout formLayout = new FormLayout();
-        formLayout.add(this.name, this.surname, this.callSign, this.email, this.logFile);
+        formLayout.add(this.name, this.surname, this.callSign, this.email, this.logFile, this.fileName);
         // vertical.add (formLayout);
         return formLayout;
     }
-    public Component getFileUploder()
+    public void getFileUploader()
     {
-        Div output = new Div();
-
         logFile.addSucceededListener(event -> {
-            Component component = createComponent(event.getMIMEType(),
-                                                  event.getFileName(),
-                                                  multiFileMemoryBuffer
-                                                          .getInputStream(event.getFileName()));
+            this.stream = memoryBuffer.getInputStream ();
+            this.fileName.setValue (event.getFileName ());
         });
         logFile.addFileRejectedListener(event -> {
-            Paragraph component = new Paragraph();
-            log.error ("file rejected");
+            Notification.show (event.getErrorMessage (), 5*1000, Notification.Position.TOP_CENTER).addThemeVariants (NotificationVariant.LUMO_ERROR);
         });
-        HorizontalLayout h = new HorizontalLayout(logFile, output);
-        h.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
-        return h;
-    }
-
-    private Component createComponent(
-            String mimeType, String fileName,
-            InputStream stream)
-    {
-        content = new Div();
-        String text = String.format("Mime type: '%s'\nSHA-256 hash: '%s'",
-                                    mimeType, MessageDigestUtil.sha256(stream.toString()));
-        try {
-            this.lines = IOUtils.readLines (stream);
-        } catch (IOException e) {
-            log.error (e.getMessage ());
-        }
-        content.setText(text);
-        return content;
     }
 
     private Component createButtonLayout() {
