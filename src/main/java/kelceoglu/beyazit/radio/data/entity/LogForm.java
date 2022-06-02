@@ -15,6 +15,9 @@ public class LogForm {
     private String callSign;
     private String email;
     private String fileName;
+    private Boolean spottingAssistance;
+    private String singleOrMulti;
+    private String operatorsCallSigns;
     @NotNull
     private Upload logFile;
 }

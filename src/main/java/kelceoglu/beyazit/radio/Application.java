@@ -9,6 +9,7 @@ import com.vaadin.flow.theme.material.Material;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.context.annotation.ComponentScan;
 
 /**
  * The entry point of the Spring Boot application.
@@ -18,6 +19,7 @@ import org.springframework.boot.web.servlet.support.SpringBootServletInitializer
  *
  */
 @SpringBootApplication
+@ComponentScan(value = {"kelceoglu.beyazit.radio"})
 // @Theme(value = "radiolog")
 @Theme(themeClass = Lumo.class, variant = Lumo.DARK)
 // @Theme (themeClass = Material.class)
