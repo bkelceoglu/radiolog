@@ -25,6 +25,11 @@ public class ProcessLogsImpl implements IProcessLogs {
     }
 
     @Override
+    public Adam getAdam (Long oid) {
+        return null;
+    }
+
+    @Override
     public void updateAdamLogs (Adam adam) {
 
     }

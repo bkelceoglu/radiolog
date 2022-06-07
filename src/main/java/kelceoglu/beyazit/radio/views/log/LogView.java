@@ -19,24 +19,20 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.Binder;
+import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.data.validator.StringLengthValidator;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
+import com.vaadin.flow.spring.annotation.SpringComponent;
 import kelceoglu.beyazit.radio.data.entity.Adam;
 import kelceoglu.beyazit.radio.data.entity.IProcessLogs;
 import kelceoglu.beyazit.radio.data.entity.LogForm;
 import kelceoglu.beyazit.radio.utils.FormWriter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.io.IOUtils;
-import org.claspina.confirmdialog.ButtonOption;
-import org.claspina.confirmdialog.ConfirmDialog;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Calendar;
 import java.util.List;
@@ -45,6 +41,7 @@ import java.util.List;
 @Route(value = "")
 @Uses(Icon.class)
 @Slf4j
+@SpringComponent
 public class LogView extends Div {
     Button cancel = new Button ("CLEAR");
     Button save = new Button ("UPLOAD");
@@ -53,6 +50,8 @@ public class LogView extends Div {
     private final TextField callSign = new TextField ("CALLSIGN");
     private final EmailField email = new EmailField ("EMAIL");
     private final TextField fileName = new TextField ("FILE NAME");
+    private final String tek = "Tekli";
+    private final String cok = "Çoklu";
     private  Upload logFile;
     private final RadioButtonGroup<Boolean> spotting = new RadioButtonGroup<> ();
     private final RadioButtonGroup<String> singleOrMulti = new RadioButtonGroup<> ();
@@ -63,11 +62,10 @@ public class LogView extends Div {
     private final Binder<LogForm> binder = new Binder<> (LogForm.class);
     private List<String> lines;
     private Adam adam;
+    private LogForm logForm = new LogForm ();
 
     @Autowired
     private IProcessLogs processLogs;
-    @Autowired
-    private LogDetailsDisplay logDetailsDisplay;
     @Autowired
     private FormWriter formWriter;
 
@@ -75,7 +73,45 @@ public class LogView extends Div {
         this.prepareSetup ();
     }
 
+    public void prepareSetup() {
+        this.memoryBuffer = new MemoryBuffer ();
+        this.logFile = new Upload (memoryBuffer);
+        this.logFile.setDropAllowed (true);
+        this.logFile.setAcceptedFileTypes (".edi");
+        this.logFile.setMaxFileSize (this.MAX_FILE_SIZE);
+        this.fileName.setReadOnly (true);
+        this.setFileUploaderListeners();
+        this.save.setEnabled (false);
+        this.spotting.setLabel ("Did you use spotting Assistance?");
+        this.spotting.setItems (Boolean.TRUE, Boolean.FALSE);
+        this.spotting.setValue (Boolean.FALSE);
+        this.singleOrMulti.setLabel ("Tek ya da Çoklu Katilim?");
+        this.singleOrMulti.setItems (this.tek, this.cok);
+        this.singleOrMulti.setValue (this.tek);
+        this.callSign.setValueChangeMode (ValueChangeMode.EAGER);
+        this.callSign.addValueChangeListener (event -> {
+            this.operatorsCallSigns.setValue (this.callSign.getValue ());
+        });
+        add (new H3 ("RADIO LOG CONTEST " + Calendar.getInstance ()
+                .get (Calendar.YEAR)));
+        add (createFormLayout ());
+        add (createButtonLayout ());
 
+        binder.bindInstanceFields (this);
+        this.bindFields ();
+        clearForm ();
+        this.binder.addStatusChangeListener (e -> this.save.setEnabled (this.binder.isValid ()));
+        cancel.addClickListener (e -> clearForm ());
+        save.addClickListener (e -> {
+            // this.processLogsDialog ();
+            this.formWriter.processLogRecord (this.stream, this.logForm);
+            this.clearForm ();
+        });
+    }
+
+
+
+    /*
     private void saveAdamsLogs () {
         System.out.println ("alooooooooo");
         ConfirmDialog
@@ -85,15 +121,17 @@ public class LogView extends Div {
                 .withOkButton(() -> {
                     System.out.println("YES. Implement logic here.");
                 }, ButtonOption.focus(), ButtonOption.caption("YES"))
-                .withCancelButton(ButtonOption.caption("NO"))
+                .withCancelButton(() -> {
+                    System.out.println ("please no derim");
+                }, ButtonOption.caption ("NO"))
                 .open();
 
-        System.out.println ("abbooovvvvv");
         // process pop - up first then save
         //this.logDetailsDisplay.displayLog ();
         //this.processLogs.saveAdamLogs (this.formWriter.processLogRecord (this.stream));
     }
 
+     */
     private void bindFields () {
         this.binder.forField (this.email)
                 .withValidator (new EmailValidator ("Email seems wrong"))
@@ -118,7 +156,7 @@ public class LogView extends Div {
                 .bind (LogForm :: getSingleOrMulti, LogForm :: setSingleOrMulti);
     }
 
-    private void clearForm () {
+    public void clearForm () {
         binder.setBean (new LogForm ());
         this.logFile.clearFileList ();
     }
@@ -156,39 +194,6 @@ public class LogView extends Div {
         return buttonLayout;
     }
 
-    public void prepareSetup() {
-        this.memoryBuffer = new MemoryBuffer ();
-        this.logFile = new Upload (memoryBuffer);
-        this.logFile.setDropAllowed (true);
-        this.logFile.setAcceptedFileTypes (".edi");
-        this.logFile.setMaxFileSize (this.MAX_FILE_SIZE);
-        this.fileName.setReadOnly (true);
-        this.setFileUploaderListeners();
-        this.save.setEnabled (false);
-        this.spotting.setLabel ("Did you use spotting Assistance?");
-        this.spotting.setItems (Boolean.TRUE, Boolean.FALSE);
-        this.spotting.setValue (Boolean.FALSE);
-        this.singleOrMulti.setLabel ("Tek ya da Çoklu Katilim?");
-        this.singleOrMulti.setItems ("Tek", "Coklu");
-        this.singleOrMulti.setValue ("Tek");
-        this.callSign.setValueChangeMode (ValueChangeMode.EAGER);
-        this.callSign.addValueChangeListener (event -> {
-            this.operatorsCallSigns.setValue (this.callSign.getValue ());
-        });
-        add (new H3 ("RADIO LOG CONTEST " + Calendar.getInstance ()
-                .get (Calendar.YEAR)));
-        add (createFormLayout ());
-        add (createButtonLayout ());
 
-        binder.bindInstanceFields (this);
-        this.bindFields ();
-        clearForm ();
-        this.binder.addStatusChangeListener (e -> this.save.setEnabled (this.binder.isValid ()));
-        cancel.addClickListener (e -> clearForm ());
-        save.addClickListener (e -> {
-            this.saveAdamsLogs ();
-            clearForm ();
-        });
-    }
 
 }

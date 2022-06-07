@@ -7,6 +7,8 @@ import lombok.Setter;
 
 import javax.persistence.*;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author: beyazit kelceoglu
@@ -34,27 +36,22 @@ import java.io.Serializable;
 @AllArgsConstructor
 public class Adam implements Serializable
 {
-    
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long oid;
-    private String email;
+    private String Tdate;
     private String Pcall;
     private String PWWLo;
     private String Psect;
     private String PBand;
-    private String RName;
     private String PCLub;
     private String Radr1;
     private String Radr2;
     private String Rcity;
     private String Rcoun;
     private int cqsop;
-    private int qsorecords;
+    private int numberOfQsorecords;
+    private List<String> qsorecords = new ArrayList<> ();
     
-    
-    @Column (columnDefinition = "TEXT")
-    private String dosya;
-
 }
