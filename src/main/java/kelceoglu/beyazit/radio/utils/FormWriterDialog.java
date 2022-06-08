@@ -6,16 +6,13 @@ import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import kelceoglu.beyazit.radio.data.entity.Adam;
 import kelceoglu.beyazit.radio.data.entity.LogForm;
 import kelceoglu.beyazit.radio.data.entity.LogFormEntity;
-import kelceoglu.beyazit.radio.views.log.LogView;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.ini4j.Config;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -25,7 +22,7 @@ import java.util.List;
 
 @SpringComponent
 @Slf4j
-public class FormWriter {
+public class FormWriterDialog {
 
     private List<String>  lines;
     private InputStream localStream;

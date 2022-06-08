@@ -4,7 +4,6 @@ import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.dependency.Uses;
-import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
 import com.vaadin.flow.component.html.Div;
 import com.vaadin.flow.component.html.H3;
@@ -19,23 +18,19 @@ import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
 import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.data.binder.Binder;
-import com.vaadin.flow.data.binder.ValidationException;
 import com.vaadin.flow.data.validator.EmailValidator;
 import com.vaadin.flow.data.validator.StringLengthValidator;
 import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import kelceoglu.beyazit.radio.data.entity.Adam;
-import kelceoglu.beyazit.radio.data.entity.IProcessLogs;
 import kelceoglu.beyazit.radio.data.entity.LogForm;
-import kelceoglu.beyazit.radio.utils.FormWriter;
+import kelceoglu.beyazit.radio.utils.FormWriterDialog;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.InputStream;
 import java.util.Calendar;
-import java.util.List;
 
 @PageTitle("Log")
 @Route(value = "")
@@ -60,14 +55,10 @@ public class LogView extends Div {
     private int MAX_FILE_SIZE = 50 * 1024;
     private MemoryBuffer memoryBuffer;
     private final Binder<LogForm> binder = new Binder<> (LogForm.class);
-    private List<String> lines;
-    private Adam adam;
     private LogForm logForm = new LogForm ();
 
     @Autowired
-    private IProcessLogs processLogs;
-    @Autowired
-    private FormWriter formWriter;
+    private FormWriterDialog formWriterDialog;
 
     public LogView () {
         this.prepareSetup ();
@@ -104,7 +95,7 @@ public class LogView extends Div {
         cancel.addClickListener (e -> clearForm ());
         save.addClickListener (e -> {
             // this.processLogsDialog ();
-            this.formWriter.processLogRecord (this.stream, this.logForm);
+            this.formWriterDialog.processLogRecord (this.stream, this.logForm);
             this.clearForm ();
         });
     }

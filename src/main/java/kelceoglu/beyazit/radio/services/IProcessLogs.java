@@ -1,5 +1,6 @@
-package kelceoglu.beyazit.radio.data.entity;
+package kelceoglu.beyazit.radio.services;
 
+import kelceoglu.beyazit.radio.data.entity.Adam;
 import org.springframework.stereotype.Component;
 import java.io.Serializable;
 
