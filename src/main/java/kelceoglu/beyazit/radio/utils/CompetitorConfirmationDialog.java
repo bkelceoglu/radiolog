@@ -70,8 +70,7 @@ public class CompetitorConfirmationDialog {
                 regTempVals.setTdate ( sec.get (i).get ("TDate") );
                 regTempVals.setPWWLo ( sec.get (i).get ( "PWWLo") );
                 regTempVals.setPBand ( sec.get (i).get ( "PBand") );
-                regTempVals.setPCLub ( sec.get (i).get ( "PClub") == null
-                                            ? "no club" : ini.get (competitorEntity.getName (), "PClub"));
+                regTempVals.setPCLub ( sec.get (i).get ( "PClub") == null ? "no club" : ini.get (competitorEntity.getName (), "PClub"));
                 regTempVals.setRcity ( sec.get (i).get ( "RCity") );
                 regTempVals.setRcoun ( sec.get (i).get ( "RCoun") );
                 regTempVals.setCqsop ( Integer.parseInt (sec.get (i).get ("CQSOP")) );
