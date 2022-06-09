@@ -1,7 +1,7 @@
 package kelceoglu.beyazit.radio.services;
 
-import kelceoglu.beyazit.radio.data.entity.Adam;
-import kelceoglu.beyazit.radio.data.entity.LogFormRepository;
+import kelceoglu.beyazit.radio.data.entity.RegVals;
+import kelceoglu.beyazit.radio.data.entity.CompetitorRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -11,10 +11,10 @@ import org.springframework.stereotype.Service;
 @Service
 public class ProcessLogsImpl implements IProcessLogs {
     @Autowired
-    private LogFormRepository repository;
+    private CompetitorRepository repository;
 
     @Override
-    public void saveAdamLogs (Adam adam) {
+    public void saveAdamLogs (RegVals regVals) {
 
     }
 
@@ -24,12 +24,12 @@ public class ProcessLogsImpl implements IProcessLogs {
     }
 
     @Override
-    public Adam getAdam (Long oid) {
+    public RegVals getAdam (Long oid) {
         return null;
     }
 
     @Override
-    public void updateAdamLogs (Adam adam) {
+    public void updateAdamLogs (RegVals regVals) {
 
     }
 

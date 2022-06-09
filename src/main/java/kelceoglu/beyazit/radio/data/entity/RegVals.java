@@ -29,29 +29,24 @@ import java.util.List;
  *
  */
 @Entity
-@Table(name = "adam")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Adam implements Serializable
+public class RegVals implements Serializable
 {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long oid;
     private String Tdate;
-    private String Pcall;
     private String PWWLo;
-    private String Psect;
     private String PBand;
     private String PCLub;
-    private String Radr1;
-    private String Radr2;
     private String Rcity;
     private String Rcoun;
     private int cqsop;
-    private int numberOfQsorecords;
+    @ElementCollection(targetClass=String.class)
     private List<String> qsorecords = new ArrayList<> ();
     
 }

@@ -24,9 +24,10 @@ import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.PageTitle;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.spring.annotation.SpringComponent;
-import kelceoglu.beyazit.radio.data.entity.LogForm;
-import kelceoglu.beyazit.radio.utils.FormWriterDialog;
+import kelceoglu.beyazit.radio.data.entity.Competitor;
+import kelceoglu.beyazit.radio.utils.CompetitorConfirmationDialog;
 import lombok.extern.slf4j.Slf4j;
+import org.hibernate.query.criteria.internal.ValueHandlerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.InputStream;
@@ -36,7 +37,6 @@ import java.util.Calendar;
 @Route(value = "")
 @Uses(Icon.class)
 @Slf4j
-@SpringComponent
 public class LogView extends Div {
     Button cancel = new Button ("CLEAR");
     Button save = new Button ("UPLOAD");
@@ -50,15 +50,15 @@ public class LogView extends Div {
     private  Upload logFile;
     private final RadioButtonGroup<Boolean> spotting = new RadioButtonGroup<> ();
     private final RadioButtonGroup<String> singleOrMulti = new RadioButtonGroup<> ();
-    private final TextField operatorsCallSigns = new TextField ("Operator Names");
+    private final TextField operatorsCallSigns = new TextField ("Operator Callsigns");
     private InputStream stream;
     private int MAX_FILE_SIZE = 50 * 1024;
     private MemoryBuffer memoryBuffer;
-    private final Binder<LogForm> binder = new Binder<> (LogForm.class);
-    private LogForm logForm = new LogForm ();
+    private final Binder<Competitor> binder = new Binder<> (Competitor.class);
+    private Competitor competitor = new Competitor ();
 
     @Autowired
-    private FormWriterDialog formWriterDialog;
+    private CompetitorConfirmationDialog competitorConfirmationDialog;
 
     public LogView () {
         this.prepareSetup ();
@@ -83,8 +83,7 @@ public class LogView extends Div {
         this.callSign.addValueChangeListener (event -> {
             this.operatorsCallSigns.setValue (this.callSign.getValue ());
         });
-        add (new H3 ("RADIO LOG CONTEST " + Calendar.getInstance ()
-                .get (Calendar.YEAR)));
+        add (new H3 ("TA VHF/UHF CONTEST: " + Calendar.getInstance ().get (Calendar.YEAR)));
         add (createFormLayout ());
         add (createButtonLayout ());
 
@@ -95,7 +94,8 @@ public class LogView extends Div {
         cancel.addClickListener (e -> clearForm ());
         save.addClickListener (e -> {
             // this.processLogsDialog ();
-            this.formWriterDialog.processLogRecord (this.stream, this.logForm);
+            // System.out.println (this.binder.getBean ().getCallSign ());
+            this.competitorConfirmationDialog.processLogRecord (this.stream, this.binder.getBean ());
             this.clearForm ();
         });
     }
@@ -126,29 +126,30 @@ public class LogView extends Div {
     private void bindFields () {
         this.binder.forField (this.email)
                 .withValidator (new EmailValidator ("Email seems wrong"))
-                .bind (LogForm :: getEmail, LogForm :: setEmail);
+                .bind (Competitor :: getEmail, Competitor :: setEmail);
         this.binder.forField (this.name)
                 .withValidator (new StringLengthValidator ("between 3 - 12 characters", 3, 12))
-                .bind (LogForm :: getName, LogForm :: setName);
+                .bind (Competitor :: getName, Competitor :: setName);
         this.binder.forField (this.surname)
                 .withValidator (new StringLengthValidator ("between 3 - 12 characters", 3, 12))
-                .bind (LogForm :: getSurname, LogForm :: setSurname);
+                .bind (Competitor :: getSurname, Competitor :: setSurname);
         this.binder.forField (this.callSign)
                 .withValidator (new StringLengthValidator ("between 3 - 8", 3, 8))
-                .bind (LogForm :: getCallSign, LogForm :: setCallSign);
+                .bind (Competitor :: getCallSign, Competitor :: setCallSign);
         this.binder.forField (this.fileName)
                 .withValidator (new StringLengthValidator ("empty", 1, 12))
-                .bind (LogForm :: getFileName, LogForm :: setFileName);
+                .bind (Competitor :: getFileName, Competitor :: setFileName);
         this.binder.forField (this.operatorsCallSigns)
                 .withValidator (new StringLengthValidator ("Number of Operators Exceeded", 3, 100))
-                .bind (LogForm :: getOperatorsCallSigns, LogForm :: setOperatorsCallSigns);
+                .bind (Competitor :: getOperatorsCallSigns, Competitor :: setOperatorsCallSigns);
         this.binder.forField (this.singleOrMulti)
                 .withValidator (new StringLengthValidator ("", 0, 10))
-                .bind (LogForm :: getSingleOrMulti, LogForm :: setSingleOrMulti);
+                .bind (Competitor :: getSingleOrMulti, Competitor :: setSingleOrMulti);
+        this.binder.forField (this.spotting).bind (Competitor::getSpottingAssistance, Competitor::setSpottingAssistance);
     }
 
     public void clearForm () {
-        binder.setBean (new LogForm ());
+        binder.setBean (new Competitor ());
         this.logFile.clearFileList ();
     }
 

@@ -1,15 +1,21 @@
 package kelceoglu.beyazit.radio.data.entity;
 
-import com.vaadin.flow.component.upload.Upload;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import javax.validation.constraints.NotNull;
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
 
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor
-public class LogForm {
+@Getter @Setter @AllArgsConstructor @NoArgsConstructor
+@Entity
+public class CompetitorEntity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Long oid;
     private String name;
     private String surname;
     private String callSign;
@@ -18,6 +24,7 @@ public class LogForm {
     private Boolean spottingAssistance;
     private String singleOrMulti;
     private String operatorsCallSigns;
-    @NotNull
-    private Upload logFile;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RegVals> regVals = new ArrayList<> ();
+
 }
