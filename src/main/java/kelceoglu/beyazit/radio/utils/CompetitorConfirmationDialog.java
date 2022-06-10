@@ -4,7 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
+import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.H3;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import kelceoglu.beyazit.radio.data.entity.Competitor;
@@ -73,6 +78,7 @@ public class CompetitorConfirmationDialog {
                 regTempVals.setPCLub ( sec.get (i).get ( "PClub") == null ? "no club" : ini.get (competitorEntity.getName (), "PClub"));
                 regTempVals.setRcity ( sec.get (i).get ( "RCity") );
                 regTempVals.setRcoun ( sec.get (i).get ( "RCoun") );
+                regTempVals.setCqsos ( sec.get (i).get ("CQSOs") );
                 regTempVals.setCqsop ( Integer.parseInt (sec.get (i).get ("CQSOP")) );
                 String n = sections.get (i + nos.get ()).getName ();
                 for ( String optionKey : ini.get (n).keySet () ) {
@@ -83,20 +89,33 @@ public class CompetitorConfirmationDialog {
             }
         }
         competitorEntity.setRegVals (regListTemp);
+        int score = 0;
+        for (RegVals r : regListTemp){
+            score = score + r.getCqsop ();
+        }
+        competitorEntity.setTotalScore (score);
         return competitorEntity;
     }
 
     private void processLogsDialog(CompetitorEntity competitorEntity) {
-        Button saveButton = new Button ("SAVE");
-        Button cancelButton = new Button ("CANCEL");
+        Button saveButton = new Button ("ONAY");
+        Button cancelButton = new Button ("İPTAL");
+        TextField callSignField = new TextField ("Callsign", competitorEntity.getCallSign (), "");
+        TextField pwwloField = new TextField ("Locator", String.valueOf (competitorEntity.getRegVals ().get (0).getPWWLo ()), "");
+        TextField pSectField = new TextField ("Single/Multi", competitorEntity.getSingleOrMulti (), "");
+        Label pBandField = new Label ("PBand");
+        TextField tScore = new TextField ("Toplam Puan", String.valueOf (competitorEntity.getTotalScore ()), "");
         Dialog logDialog = new Dialog ();
         logDialog.setModal (true);
         logDialog.setCloseOnEsc (false);
         logDialog.setCloseOnOutsideClick (false);
+        VerticalLayout v = new VerticalLayout ();
+        v.add (new H3 (competitorEntity.getCallSign () + " İçin Log Özeti"));
+
         FormLayout formLayout = new FormLayout ();
         formLayout.setResponsiveSteps (new FormLayout.ResponsiveStep ("25em", 1));
-        formLayout.addFormItem (new TextField (), "NAME:");
-        formLayout.addFormItem (new TextField (), "SURNAME:");
+        formLayout.add(callSignField, pwwloField, pSectField, pBandField, this.getScoreValues (competitorEntity), tScore);
+        v.add (formLayout);
         HorizontalLayout h = new HorizontalLayout ();
         cancelButton.addClickListener (e -> {
             logDialog.close ();
@@ -104,14 +123,25 @@ public class CompetitorConfirmationDialog {
         });
         h.add (saveButton);
         h.add (cancelButton);
-        formLayout.add (h);
-        logDialog.add (formLayout);
+        v.add (h);
+        logDialog.add (v);
         saveButton.addClickListener (e -> {
             // this.writeToAFile (this.localCompetitor.getCallSign ());
             this.repository.save (competitorEntity);
             logDialog.close ();
         });
         logDialog.open ();
+    }
+
+    private Grid getScoreValues(CompetitorEntity c) {
+        List<RegVals> regVals = c.getRegVals ();
+        Grid<RegVals> scoreGrid = new Grid<> (RegVals.class, false);
+        // scoreGrid.setMaxHeight ();
+        scoreGrid.addColumn (RegVals::getPBand).setHeader ("PBand");
+        scoreGrid.addColumn (RegVals::getCqsos).setHeader ("CQSOs");
+        scoreGrid.addColumn (RegVals::getCqsop).setHeader ("CQSOP");
+        scoreGrid.setItems (regVals);
+        return  scoreGrid;
     }
 
     public void writeToAFile(String callSign, InputStream stream) {

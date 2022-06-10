@@ -24,6 +24,7 @@ public class CompetitorEntity {
     private Boolean spottingAssistance;
     private String singleOrMulti;
     private String operatorsCallSigns;
+    private int totalScore;
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<RegVals> regVals = new ArrayList<> ();
 

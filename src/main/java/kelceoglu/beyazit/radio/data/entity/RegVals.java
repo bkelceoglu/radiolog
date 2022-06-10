@@ -45,6 +45,7 @@ public class RegVals implements Serializable
     private String PCLub;
     private String Rcity;
     private String Rcoun;
+    private String cqsos;
     private int cqsop;
     @ElementCollection(targetClass=String.class)
     private List<String> qsorecords = new ArrayList<> ();
