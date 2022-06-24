@@ -1,6 +1,7 @@
 package kelceoglu.beyazit.radio.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -24,6 +25,7 @@ import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import javax.validation.constraints.Null;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -126,11 +128,30 @@ public class CompetitorConfirmationDialog {
         v.add (h);
         logDialog.add (v);
         saveButton.addClickListener (e -> {
-            // this.writeToAFile (this.localCompetitor.getCallSign ());
-            this.repository.save (competitorEntity);
-            logDialog.close ();
+            try {
+                CompetitorEntity temp = this.repository.getByCallSign (competitorEntity.getCallSign ());
+                if ( temp.getCallSign ().equals (competitorEntity.getCallSign ()) ) {
+                    this.repository.delete (temp);
+                    this.repository.save (competitorEntity);
+                }
+            } catch (NullPointerException nullPointerException) {
+                log.error (nullPointerException.getLocalizedMessage ());
+                this.repository.save (competitorEntity);
+            } finally {
+                logDialog.close ();
+                this.informUser ();
+            }
         });
         logDialog.open ();
+    }
+
+    private void informUser() {
+        Dialog dialog = new Dialog();
+        VerticalLayout dialogLayout = new VerticalLayout ();
+        dialog.add(dialogLayout);
+        dialogLayout.add (new Label ("LOG KAYDEDİLMİŞTİR. BAŞARILAR"));
+        dialogLayout.add(new Button("KAPAT", e -> dialog.close()));
+        dialog.open ();
     }
 
     private Grid getScoreValues(CompetitorEntity c) {
