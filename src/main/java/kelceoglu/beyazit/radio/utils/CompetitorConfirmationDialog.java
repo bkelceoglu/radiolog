@@ -24,7 +24,10 @@ import org.ini4j.Config;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 
+import javax.mail.internet.MimeMessage;
 import javax.validation.constraints.Null;
 import java.io.*;
 import java.util.ArrayList;
@@ -41,6 +44,8 @@ public class CompetitorConfirmationDialog {
     private ObjectMapper objectMapper;
     @Autowired
     private CompetitorRepository repository;
+    @Autowired private JavaMailSender mailSender;
+
 
     public void processLogRecord(InputStream stream, Competitor competitor) {
         this.localCompetitor = competitor;
@@ -133,6 +138,7 @@ public class CompetitorConfirmationDialog {
                 if ( temp.getCallSign ().equals (competitorEntity.getCallSign ()) ) {
                     this.repository.delete (temp);
                     this.repository.save (competitorEntity);
+                    this.mailToUser(competitorEntity.getEmail ());
                 }
             } catch (NullPointerException nullPointerException) {
                 log.error (nullPointerException.getLocalizedMessage ());
@@ -143,6 +149,19 @@ public class CompetitorConfirmationDialog {
             }
         });
         logDialog.open ();
+    }
+
+    private void mailToUser(String emailAddress) {
+        MimeMessage mimeMessage = mailSender.createMimeMessage ();
+        try {
+            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper (mimeMessage);
+            mimeMessageHelper.setSubject ("Radio Log");
+            mimeMessageHelper.setTo (emailAddress);
+            mimeMessageHelper.setText ("Yarışma Log'unuz alınmıştır. Başarılar dileriz");
+            mailSender.send (mimeMessageHelper.getMimeMessage ());
+        }catch (Exception e) {
+            e.printStackTrace ();
+        }
     }
 
     private void informUser() {
