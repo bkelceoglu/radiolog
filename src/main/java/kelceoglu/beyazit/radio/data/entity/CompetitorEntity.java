@@ -26,6 +26,6 @@ public class CompetitorEntity {
     private String operatorsCallSigns;
     private int totalScore;
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<RegVals> regVals = new ArrayList<> ();
+    private List<RegValsEntity> regValEntities = new ArrayList<> ();
 
 }

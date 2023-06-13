@@ -1,7 +1,6 @@
 package kelceoglu.beyazit.radio.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.vaadin.flow.component.Text;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.formlayout.FormLayout;
@@ -10,16 +9,14 @@ import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.spring.annotation.SpringComponent;
 import kelceoglu.beyazit.radio.data.entity.Competitor;
 import kelceoglu.beyazit.radio.data.entity.CompetitorEntity;
 import kelceoglu.beyazit.radio.data.entity.CompetitorRepository;
-import kelceoglu.beyazit.radio.data.entity.RegVals;
+import kelceoglu.beyazit.radio.data.entity.RegValsEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.ini4j.Config;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
@@ -28,11 +25,12 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
 import javax.mail.internet.MimeMessage;
-import javax.validation.constraints.Null;
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 @SpringComponent
 @Slf4j
@@ -45,61 +43,60 @@ public class CompetitorConfirmationDialog {
     @Autowired
     private CompetitorRepository repository;
     @Autowired private JavaMailSender mailSender;
+    private String path;
+    private String tempPath = "/srv/tmp/";
 
 
     public void processLogRecord(InputStream stream, Competitor competitor) {
+
+        // after save button clicked.
+        competitor.setCallSign (competitor.getCallSign ().replace ("/", "-"));
         this.localCompetitor = competitor;
-        this.writeToAFile (competitor.getCallSign (), stream);
+        this.writeToAFile (competitor.getCallSign (), stream, true);
         try {
             Config cfg = new Config ();
             cfg.setEmptyOption (true);
             cfg.setMultiSection (true);
             this.ini = new Ini();
             ini.setConfig (cfg);
-            ini.load (FileUtils.openInputStream (new File ("/srv/", competitor.getCallSign () + ".edi")));
+            ini.load (FileUtils.openInputStream (new File (this.tempPath, competitor.getCallSign () + ".edi")));
             this.processLogsDialog (this.generateLogFormEntity ());
         } catch (IOException e) {
             log.error (e.getLocalizedMessage ());
         }
     }
-
     private CompetitorEntity generateLogFormEntity() {
         CompetitorEntity competitorEntity =  this.objectMapper.convertValue (this.localCompetitor, CompetitorEntity.class);
-        List<RegVals> regListTemp = competitorEntity.getRegVals ();
+        List<RegValsEntity> regListTemp = competitorEntity.getRegValEntities ();
         ini.remove (ini.get ("Remarks"));
         List<Section> sections = new ArrayList<> (ini.values ());
         AtomicInteger nos = new AtomicInteger (0);
-        sections.stream ().forEach (s -> {
+        sections.forEach (s -> {
             if (s.getName ().contains ("REG")) {
                 nos.getAndIncrement ();
             }
         });
         List<Section> sec = ini.getAll (sections.get (0).getName ());
-        for (int i = 0; i < ini.values ().size (); i++) {
-            if ( sections.get (i).getName ().contains ("REG") ) {
-                RegVals regTempVals = new RegVals ();
-                List<String> qsorecordstemp = regTempVals.getQsorecords ();
-                regTempVals.setTdate ( sec.get (i).get ("TDate") );
-                regTempVals.setPWWLo ( sec.get (i).get ( "PWWLo") );
-                regTempVals.setPBand ( sec.get (i).get ( "PBand") );
-                regTempVals.setPCLub ( sec.get (i).get ( "PClub") == null ? "no club" : ini.get (competitorEntity.getName (), "PClub"));
-                regTempVals.setRcity ( sec.get (i).get ( "RCity") );
-                regTempVals.setRcoun ( sec.get (i).get ( "RCoun") );
-                regTempVals.setCqsos ( sec.get (i).get ("CQSOs") );
-                regTempVals.setCqsop ( Integer.parseInt (sec.get (i).get ("CQSOP")) );
-                String n = sections.get (i + nos.get ()).getName ();
-                for ( String optionKey : ini.get (n).keySet () ) {
-                    qsorecordstemp.add (optionKey);
-                }
-                regTempVals.setQsorecords (qsorecordstemp);
-                regListTemp.add (regTempVals);
-            }
-        }
-        competitorEntity.setRegVals (regListTemp);
+        IntStream.range (0, ini.values ().size ()).filter (i -> sections.get (i).getName ().contains ("REG"))
+                .forEach (i -> {
+                    RegValsEntity regTempVals = new RegValsEntity ();
+                    List<String> qsorecordstemp = regTempVals.getQsorecords ();
+                    regTempVals.setTdate (sec.get (i).get ("TDate"));
+                    regTempVals.setPWWLo (sec.get (i).get ("PWWLo"));
+                    regTempVals.setPBand (sec.get (i).get ("PBand"));
+                    regTempVals.setPCLub (sec.get (i).get ("PClub") == null ? "no club" : ini.get (competitorEntity.getName (), "PClub"));
+                    regTempVals.setRcity (sec.get (i).get ("RCity"));
+                    regTempVals.setRcoun (sec.get (i).get ("RCoun"));
+                    regTempVals.setCqsos (sec.get (i).get ("CQSOs"));
+                    regTempVals.setCqsop (Integer.parseInt (sec.get (i).get ("CQSOP")));
+                    String n = sections.get (i + nos.get ()).getName ();
+                    qsorecordstemp.addAll (ini.get (n).keySet ());
+                    regTempVals.setQsorecords (qsorecordstemp);
+                    regListTemp.add (regTempVals);
+                });
+        competitorEntity.setRegValEntities (regListTemp);
         int score = 0;
-        for (RegVals r : regListTemp){
-            score = score + r.getCqsop ();
-        }
+        for (RegValsEntity r : regListTemp) score = score + r.getCqsop ();
         competitorEntity.setTotalScore (score);
         return competitorEntity;
     }
@@ -107,8 +104,8 @@ public class CompetitorConfirmationDialog {
     private void processLogsDialog(CompetitorEntity competitorEntity) {
         Button saveButton = new Button ("ONAY");
         Button cancelButton = new Button ("İPTAL");
-        TextField callSignField = new TextField ("Callsign", competitorEntity.getCallSign (), "");
-        TextField pwwloField = new TextField ("Locator", String.valueOf (competitorEntity.getRegVals ().get (0).getPWWLo ()), "");
+        TextField callSignField = new TextField ("Callsign", competitorEntity.getCallSign ());
+        TextField pwwloField = new TextField ("Locator", String.valueOf (competitorEntity.getRegValEntities ().get (0).getPWWLo ()), "");
         TextField pSectField = new TextField ("Single/Multi", competitorEntity.getSingleOrMulti (), "");
         Label pBandField = new Label ("PBand");
         TextField tScore = new TextField ("Toplam Puan", String.valueOf (competitorEntity.getTotalScore ()), "");
@@ -126,7 +123,7 @@ public class CompetitorConfirmationDialog {
         HorizontalLayout h = new HorizontalLayout ();
         cancelButton.addClickListener (e -> {
             logDialog.close ();
-            FileUtils.deleteQuietly (new File ("/srv/", this.localCompetitor.getCallSign () + ".edi"));
+            FileUtils.deleteQuietly (new File (this.tempPath, this.localCompetitor.getCallSign () + ".edi"));
         });
         h.add (saveButton);
         h.add (cancelButton);
@@ -137,18 +134,35 @@ public class CompetitorConfirmationDialog {
                 CompetitorEntity temp = this.repository.getByCallSign (competitorEntity.getCallSign ());
                 if ( temp.getCallSign ().equals (competitorEntity.getCallSign ()) ) {
                     this.repository.delete (temp);
-                    this.repository.save (competitorEntity);
-                    this.mailToUser(competitorEntity.getEmail ());
                 }
             } catch (NullPointerException nullPointerException) {
                 log.error (nullPointerException.getLocalizedMessage ());
-                this.repository.save (competitorEntity);
             } finally {
-                logDialog.close ();
+                this.createRealPath (competitorEntity);
+                this.writeToAFile (competitorEntity.getCallSign (), null, false);
+                this.repository.save (competitorEntity);
                 this.informUser ();
+                this.mailToUser (competitorEntity.getEmail ());
+                logDialog.close ();
             }
         });
         logDialog.open ();
+    }
+
+    private void createRealPath (CompetitorEntity competitorEntity) {
+        if ( competitorEntity.getSingleOrMulti ().equals ("Single FM-Tek Band") ) {
+            String s = competitorEntity.getRegValEntities ()
+                    .get (0)
+                    .getPBand ()
+                    .split (" ")[0];
+            this.path = "/srv/" + competitorEntity.getSingleOrMulti () + "/"
+                    +  s
+                    + "/";
+        } else {
+            this.path = "/srv/" + competitorEntity.getSingleOrMulti () + "/";
+        }
+        System.out.println ("PATH: " + this.path);
+
     }
 
     private void mailToUser(String emailAddress) {
@@ -174,20 +188,25 @@ public class CompetitorConfirmationDialog {
     }
 
     private Grid getScoreValues(CompetitorEntity c) {
-        List<RegVals> regVals = c.getRegVals ();
-        Grid<RegVals> scoreGrid = new Grid<> (RegVals.class, false);
+        List<RegValsEntity> regValEntities = c.getRegValEntities ();
+        Grid<RegValsEntity> scoreGrid = new Grid<> (RegValsEntity.class, false);
         // scoreGrid.setMaxHeight ();
-        scoreGrid.addColumn (RegVals::getPBand).setHeader ("PBand");
-        scoreGrid.addColumn (RegVals::getCqsos).setHeader ("CQSOs");
-        scoreGrid.addColumn (RegVals::getCqsop).setHeader ("CQSOP");
-        scoreGrid.setItems (regVals);
+        scoreGrid.addColumn (RegValsEntity ::getPBand).setHeader ("PBand");
+        scoreGrid.addColumn (RegValsEntity ::getCqsos).setHeader ("CQSOs");
+        scoreGrid.addColumn (RegValsEntity ::getCqsop).setHeader ("CQSOP");
+        scoreGrid.setItems (regValEntities);
         return  scoreGrid;
     }
 
-    public void writeToAFile(String callSign, InputStream stream) {
+    public void writeToAFile(String callSign, InputStream stream,  boolean temp) {
         try {
-            File file = new File ("/srv/", callSign + ".edi");
-            FileUtils.copyInputStreamToFile (stream, file);
+            File file;
+            if (temp) {
+                file = new File (this.tempPath, callSign + ".edi");
+                FileUtils.copyInputStreamToFile (stream, file);
+            } else {
+                FileUtils.copyFile (new File (this.tempPath + callSign + ".edi"), new File (this.path + callSign + ".edi"));
+            }
         } catch (IOException e) {
             e.printStackTrace ();
         }

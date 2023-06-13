@@ -7,6 +7,8 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import javax.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor
 public class Competitor {
@@ -18,6 +20,8 @@ public class Competitor {
     private Boolean spottingAssistance;
     private String singleOrMulti;
     private String operatorsCallSigns;
+    private int totalScore;
     @NotNull
     private Upload logFile;
+    private List<RegVals> regVals = new ArrayList<> ();
 }
