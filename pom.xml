@@ -10,14 +10,15 @@
     <packaging>jar</packaging>
 
     <properties>
-        <java.version>11</java.version>
-        <vaadin.version>23.0.9</vaadin.version>
+        <java.version>17</java.version>
+        <!-- <vaadin.version>23.0.9</vaadin.version> -->
+        <vaadin.version>24.1.0</vaadin.version>
     </properties>
 
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.6.7</version>
+        <version>3.1.0</version>
     </parent>
 
     <repositories>
@@ -161,11 +162,16 @@
         </dependency>
 
 
-        <!-- https://mvnrepository.com/artifact/org.springframework.boot/spring-boot-starter-mail -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
-            <version>2.7.1</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.sun.mail/jakarta.mail -->
+        <dependency>
+            <groupId>com.sun.mail</groupId>
+            <artifactId>jakarta.mail</artifactId>
+            <version>2.0.1</version>
         </dependency>
 
 
@@ -220,6 +226,7 @@
                             <execution>
                                 <goals>
                                     <goal>build-frontend</goal>
+                                    <goal>prepare-frontend</goal>
                                 </goals>
                                 <phase>compile</phase>
                             </execution>

@@ -1,20 +1,20 @@
 package kelceoglu.beyazit.radio.data.entity;
 
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter @Setter @AllArgsConstructor @NoArgsConstructor
 @Entity
 public class CompetitorEntity {
-
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @Column(name = "oid", nullable = false)
     private Long oid;
     private String name;
     private String surname;

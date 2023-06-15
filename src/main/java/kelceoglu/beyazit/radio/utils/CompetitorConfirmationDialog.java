@@ -21,16 +21,14 @@ import org.ini4j.Config;
 import org.ini4j.Ini;
 import org.ini4j.Profile.Section;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-
-import javax.mail.internet.MimeMessage;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
+
 
 @SpringComponent
 @Slf4j
@@ -164,18 +162,13 @@ public class CompetitorConfirmationDialog {
         System.out.println ("PATH: " + this.path);
 
     }
-
     private void mailToUser(String emailAddress) {
-        MimeMessage mimeMessage = mailSender.createMimeMessage ();
-        try {
-            MimeMessageHelper mimeMessageHelper = new MimeMessageHelper (mimeMessage);
-            mimeMessageHelper.setSubject ("Radio Log");
-            mimeMessageHelper.setTo (emailAddress);
-            mimeMessageHelper.setText ("Yarışma Log'unuz alınmıştır. Başarılar dileriz");
-            mailSender.send (mimeMessageHelper.getMimeMessage ());
-        }catch (Exception e) {
-            e.printStackTrace ();
-        }
+        SimpleMailMessage message = new SimpleMailMessage ();
+        message.setSubject ("LOG KAYDEDİLDİ");
+        message.setText ("LOG KAYDEDİLDİ");
+        message.setTo (emailAddress);
+        message.setBcc ("oguzhan@kayhan.name.tr");
+        this.mailSender.send (message);
     }
 
     private void informUser() {

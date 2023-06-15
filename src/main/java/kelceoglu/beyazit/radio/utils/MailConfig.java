@@ -17,6 +17,7 @@ public class MailConfig {
 
     @Bean
     public JavaMailSender mailSender () {
+
         try {
             this.ini = new Ini (new File ("/srv/mail.ini"));
             JavaMailSenderImpl javaMailSender = new JavaMailSenderImpl ();
@@ -35,4 +36,5 @@ public class MailConfig {
             throw new RuntimeException (e);
         }
     }
+
 }
